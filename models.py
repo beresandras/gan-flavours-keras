@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import tensorflow as tf
 
 from abc import abstractmethod
@@ -36,12 +37,29 @@ class GAN(keras.Model):
             self.real_accuracy,
             self.generated_accuracy,
         ]
-        # self.kid,
+
+    # self.kid,
 
     def generate(self, batch_size, training):
         latent_samples = tf.random.normal(shape=(batch_size, self.noise_size))
         generated_images = self.generator(latent_samples, training)
         return generated_images
+
+    def plot_images(self, epoch, logs, num_rows=4, num_cols=8, interval=5):
+        if (epoch + 1) % interval == 0:
+            num_images = num_rows * num_cols
+            generated_images = self.generate(num_images, training=False)
+
+            plt.figure(figsize=(num_cols * 1.5, num_rows * 1.5))
+            for row in range(num_rows):
+                for col in range(num_cols):
+                    index = row * num_cols + col
+                    plt.subplot(num_rows, num_cols, index + 1)
+                    plt.imshow(generated_images[index])
+                    plt.axis("off")
+            plt.tight_layout()
+            plt.savefig(f"images/{self.__class__.__name__}_{epoch + 1}.png")
+            plt.close()
 
     @abstractmethod
     def adversarial_loss(self, real_logits, generated_logits):
@@ -52,10 +70,8 @@ class GAN(keras.Model):
 
         with tf.GradientTape(persistent=True) as tape:
             generated_images = self.generate(batch_size, training=True)
-            combined_images = tf.concat([real_images, generated_images], axis=0)
-            combined_logits = self.discriminator(combined_images, training=True)
-            real_logits = combined_logits[:batch_size]
-            generated_logits = combined_logits[batch_size:]
+            real_logits = self.discriminator(real_images, training=True)
+            generated_logits = self.discriminator(generated_images, training=True)
             generator_loss, discriminator_loss = self.adversarial_loss(
                 real_logits, generated_logits
             )
@@ -85,10 +101,8 @@ class GAN(keras.Model):
         batch_size = tf.shape(real_images)[0]
 
         generated_images = self.generate(batch_size, training=False)
-        combined_images = tf.concat([real_images, generated_images], axis=0)
-        combined_logits = self.discriminator(combined_images, training=False)
-        real_logits = combined_logits[:batch_size]
-        generated_logits = combined_logits[batch_size:]
+        real_logits = self.discriminator(real_images, training=False)
+        generated_logits = self.discriminator(generated_images, training=False)
         generator_loss, discriminator_loss = self.adversarial_loss(
             real_logits, generated_logits
         )
