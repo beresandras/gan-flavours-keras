@@ -4,7 +4,7 @@ import tensorflow as tf
 from abc import abstractmethod
 from tensorflow import keras
 
-# from metrics import KID
+from metrics import KID
 
 
 class GAN(keras.Model):
@@ -27,7 +27,7 @@ class GAN(keras.Model):
         self.discriminator_loss_tracker = keras.metrics.Mean(name="d_loss")
         self.real_accuracy = keras.metrics.BinaryAccuracy(name="real_acc")
         self.generated_accuracy = keras.metrics.BinaryAccuracy(name="gen_acc")
-        # self.kid = KID()
+        self.kid = KID()
 
     @property
     def metrics(self):
@@ -36,9 +36,8 @@ class GAN(keras.Model):
             self.discriminator_loss_tracker,
             self.real_accuracy,
             self.generated_accuracy,
+            self.kid,
         ]
-
-    # self.kid,
 
     def generate(self, batch_size, training):
         latent_samples = tf.random.normal(shape=(batch_size, self.noise_size))
@@ -58,7 +57,11 @@ class GAN(keras.Model):
                     plt.imshow(generated_images[index])
                     plt.axis("off")
             plt.tight_layout()
-            plt.savefig(f"images/{self.__class__.__name__}_{epoch + 1}.png")
+            plt.savefig(
+                "images/{}_{}_{:.3f}.png".format(
+                    self.__class__.__name__, epoch + 1, self.kid.result()
+                )
+            )
             plt.close()
 
     @abstractmethod
@@ -91,8 +94,10 @@ class GAN(keras.Model):
 
         self.generator_loss_tracker.update_state(generator_loss)
         self.discriminator_loss_tracker.update_state(discriminator_loss)
-        self.real_accuracy(1.0, tf.keras.activations.sigmoid(real_logits))
-        self.generated_accuracy(0.0, tf.keras.activations.sigmoid(generated_logits))
+        self.real_accuracy.update_state(1.0, tf.keras.activations.sigmoid(real_logits))
+        self.generated_accuracy.update_state(
+            0.0, tf.keras.activations.sigmoid(generated_logits)
+        )
         # self.kid.update_state(real_images, generated_images)
 
         return {m.name: m.result() for m in self.metrics}
@@ -109,8 +114,10 @@ class GAN(keras.Model):
 
         self.generator_loss_tracker.update_state(generator_loss)
         self.discriminator_loss_tracker.update_state(discriminator_loss)
-        self.real_accuracy(1.0, tf.keras.activations.sigmoid(real_logits))
-        self.generated_accuracy(0.0, tf.keras.activations.sigmoid(generated_logits))
-        # self.kid.update_state(real_images, generated_images)
+        self.real_accuracy.update_state(1.0, tf.keras.activations.sigmoid(real_logits))
+        self.generated_accuracy.update_state(
+            0.0, tf.keras.activations.sigmoid(generated_logits)
+        )
+        self.kid.update_state(real_images, generated_images)
 
         return {m.name: m.result() for m in self.metrics}
