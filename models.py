@@ -46,6 +46,21 @@ class GAN(keras.Model):
             self.kid,
         ]
 
+    @property
+    def train_metrics(self):
+        return [
+            self.generator_loss_tracker,
+            self.discriminator_loss_tracker,
+            self.real_accuracy,
+            self.generated_accuracy,
+        ]
+
+    @property
+    def val_metrics(self):
+        return [
+            self.kid,
+        ]
+
     def generate(self, batch_size, training):
         latent_samples = tf.random.normal(shape=(batch_size, self.noise_size))
         if training:
@@ -116,31 +131,19 @@ class GAN(keras.Model):
         self.generated_accuracy.update_state(
             0.0, tf.keras.activations.sigmoid(generated_logits)
         )
-        # self.kid.update_state(real_images, generated_images)
 
         for weight, ema_weight in zip(
             self.generator.weights, self.ema_generator.weights
         ):
             ema_weight.assign(self.ema * ema_weight + (1 - self.ema) * weight)
 
-        return {m.name: m.result() for m in self.metrics}
+        return {m.name: m.result() for m in self.train_metrics}
 
     def test_step(self, real_images):
         batch_size = tf.shape(real_images)[0]
 
         generated_images = self.generate(batch_size, training=False)
-        real_logits = self.discriminator(real_images, training=False)
-        generated_logits = self.discriminator(generated_images, training=False)
-        generator_loss, discriminator_loss = self.adversarial_loss(
-            real_logits, generated_logits
-        )
 
-        self.generator_loss_tracker.update_state(generator_loss)
-        self.discriminator_loss_tracker.update_state(discriminator_loss)
-        self.real_accuracy.update_state(1.0, tf.keras.activations.sigmoid(real_logits))
-        self.generated_accuracy.update_state(
-            0.0, tf.keras.activations.sigmoid(generated_logits)
-        )
         self.kid.update_state(real_images, generated_images)
 
-        return {m.name: m.result() for m in self.metrics}
+        return {m.name: m.result() for m in self.val_metrics}
