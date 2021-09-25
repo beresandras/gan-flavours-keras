@@ -8,14 +8,21 @@ from metrics import KID
 
 
 class GAN(keras.Model):
-    def __init__(self, generator, discriminator, one_sided_label_smoothing):
+    def __init__(self, generator, discriminator, one_sided_label_smoothing, ema):
         super().__init__()
 
         self.generator = generator
+        self.ema_generator = keras.models.clone_model(self.generator)
         self.discriminator = discriminator
 
-        self.one_sided_label_smoothing = one_sided_label_smoothing
+        self.generator.summary()
+        self.discriminator.summary()
+
         self.noise_size = self.generator.input_shape[1]
+        self.one_sided_label_smoothing = one_sided_label_smoothing
+        self.ema = ema
+
+        self.latent_samples = None
 
     def compile(self, generator_optimizer, discriminator_optimizer, **kwargs):
         super().compile(**kwargs)
@@ -41,20 +48,31 @@ class GAN(keras.Model):
 
     def generate(self, batch_size, training):
         latent_samples = tf.random.normal(shape=(batch_size, self.noise_size))
-        generated_images = self.generator(latent_samples, training)
+        if training:
+            generated_images = self.generator(latent_samples, training)
+        else:
+            generated_images = self.ema_generator(latent_samples, training)
         return generated_images
 
-    def plot_images(self, epoch, logs, num_rows=4, num_cols=8, interval=5):
+    def plot_images(self, epoch, logs, num_rows=2, num_cols=8, interval=5):
         if (epoch + 1) % interval == 0:
             num_images = num_rows * num_cols
-            generated_images = self.generate(num_images, training=False)
+            if self.latent_samples is None:
+                self.latent_samples = tf.random.normal(
+                    shape=(num_images, self.noise_size)
+                )
+            generated_images_1 = self.ema_generator(self.latent_samples, training=False)
+            generated_images_2 = self.generate(num_images, training=False)
 
-            plt.figure(figsize=(num_cols * 1.5, num_rows * 1.5))
+            plt.figure(figsize=(num_cols * 1.5, 2 * num_rows * 1.5))
             for row in range(num_rows):
                 for col in range(num_cols):
                     index = row * num_cols + col
-                    plt.subplot(num_rows, num_cols, index + 1)
-                    plt.imshow(generated_images[index])
+                    plt.subplot(2 * num_rows, num_cols, index + 1)
+                    plt.imshow(generated_images_1[index])
+                    plt.axis("off")
+                    plt.subplot(2 * num_rows, num_cols, num_images + index + 1)
+                    plt.imshow(generated_images_2[index])
                     plt.axis("off")
             plt.tight_layout()
             plt.savefig(
@@ -99,6 +117,11 @@ class GAN(keras.Model):
             0.0, tf.keras.activations.sigmoid(generated_logits)
         )
         # self.kid.update_state(real_images, generated_images)
+
+        for weight, ema_weight in zip(
+            self.generator.weights, self.ema_generator.weights
+        ):
+            ema_weight.assign(self.ema * ema_weight + (1 - self.ema) * weight)
 
         return {m.name: m.result() for m in self.metrics}
 

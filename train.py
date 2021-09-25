@@ -23,13 +23,14 @@ one_sided_label_smoothing = 0.1
 leaky_relu_slope = 0.2
 dropout_rate = 0.4
 initializer = keras.initializers.RandomNormal(stddev=0.02)
+ema = 0.99
 
 # load STL10 dataset
 train_dataset = prepare_dataset("train", image_size, padding, batch_size)
 test_dataset = prepare_dataset("test", image_size, padding, batch_size)
 
 # select an algorithm
-for Algorithm in [NonSaturatingGAN, LeastSquaresGAN, MiniMaxGAN, WassersteinGAN]:
+for Algorithm in [NonSaturatingGAN]:
 
     # architecture
     model = Algorithm(
@@ -39,7 +40,7 @@ for Algorithm in [NonSaturatingGAN, LeastSquaresGAN, MiniMaxGAN, WassersteinGAN]
                 layers.Dense(
                     4 * 4 * width, kernel_initializer=initializer, use_bias=False
                 ),
-                layers.BatchNormalization(),
+                layers.BatchNormalization(scale=False),
                 layers.ReLU(),
                 layers.Reshape(target_shape=(4, 4, width)),
                 layers.UpSampling2D(size=2),
@@ -50,7 +51,7 @@ for Algorithm in [NonSaturatingGAN, LeastSquaresGAN, MiniMaxGAN, WassersteinGAN]
                     kernel_initializer=initializer,
                     use_bias=False,
                 ),
-                layers.BatchNormalization(),
+                layers.BatchNormalization(scale=False),
                 layers.ReLU(),
                 layers.UpSampling2D(size=2),
                 layers.Conv2D(
@@ -60,7 +61,7 @@ for Algorithm in [NonSaturatingGAN, LeastSquaresGAN, MiniMaxGAN, WassersteinGAN]
                     kernel_initializer=initializer,
                     use_bias=False,
                 ),
-                layers.BatchNormalization(),
+                layers.BatchNormalization(scale=False),
                 layers.ReLU(),
                 layers.UpSampling2D(size=2),
                 layers.Conv2D(
@@ -82,7 +83,9 @@ for Algorithm in [NonSaturatingGAN, LeastSquaresGAN, MiniMaxGAN, WassersteinGAN]
                     strides=2,
                     padding="same",
                     kernel_initializer=initializer,
+                    use_bias=False,
                 ),
+                layers.BatchNormalization(scale=False),
                 layers.LeakyReLU(alpha=leaky_relu_slope),
                 layers.Conv2D(
                     width,
@@ -92,7 +95,7 @@ for Algorithm in [NonSaturatingGAN, LeastSquaresGAN, MiniMaxGAN, WassersteinGAN]
                     kernel_initializer=initializer,
                     use_bias=False,
                 ),
-                layers.BatchNormalization(),
+                layers.BatchNormalization(scale=False),
                 layers.LeakyReLU(alpha=leaky_relu_slope),
                 layers.Conv2D(
                     width,
@@ -102,7 +105,7 @@ for Algorithm in [NonSaturatingGAN, LeastSquaresGAN, MiniMaxGAN, WassersteinGAN]
                     kernel_initializer=initializer,
                     use_bias=False,
                 ),
-                layers.BatchNormalization(),
+                layers.BatchNormalization(scale=False),
                 layers.LeakyReLU(alpha=leaky_relu_slope),
                 layers.Flatten(),
                 layers.Dropout(dropout_rate),
@@ -111,6 +114,7 @@ for Algorithm in [NonSaturatingGAN, LeastSquaresGAN, MiniMaxGAN, WassersteinGAN]
             name="discriminator",
         ),
         one_sided_label_smoothing=one_sided_label_smoothing,
+        ema=ema,
     )
 
     # optimizers
