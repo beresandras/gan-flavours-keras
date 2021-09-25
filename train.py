@@ -1,4 +1,5 @@
 import os
+import matplotlib.pyplot as plt
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"  # suppress info-level logs
 import tensorflow as tf
@@ -130,10 +131,33 @@ for Algorithm in [NonSaturatingGAN]:
         discriminator_optimizer=keras.optimizers.Adam(learning_rate=2e-4, beta_1=0.5),
     )
 
+    # checkpointing
+    checkpoint_path = "checkpoints/"
+    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_path,
+        save_weights_only=True,
+        monitor="val_kid",
+        mode="min",
+        save_best_only=True,
+    )
+
     # run training
-    model.fit(
+    history = model.fit(
         train_dataset,
         epochs=num_epochs,
         validation_data=test_dataset,
-        callbacks=[keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images)],
+        callbacks=[
+            keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images),
+            checkpoint_callback,
+        ],
     )
+
+    # save history
+    plt.figure(figsize=(6, 4))
+    plt.plot(history.history["val_kid"][20:])
+    plt.xlabel("epochs")
+    plt.ylabel("KID")
+    plt.tight_layout()
+    plt.savefig("graphs/kid.png")
+
+    model.load_weights(checkpoint_path)
