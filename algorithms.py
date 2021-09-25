@@ -58,6 +58,16 @@ class LeastSquaresGAN(GAN):
 class WassersteinGAN(GAN):
     def adversarial_loss(self, real_logits, generated_logits):
         generator_loss = -generated_logits
-        discriminator_loss = generated_logits - real_logits
+        discriminator_loss = -real_logits + generated_logits
+
+        return tf.reduce_mean(generator_loss), tf.reduce_mean(discriminator_loss)
+
+
+class HingeGAN(GAN):
+    def adversarial_loss(self, real_logits, generated_logits):
+        generator_loss = -generated_logits
+        discriminator_loss = -tf.minimum(1.0, real_logits) + tf.maximum(
+            -1.0, real_logits
+        )
 
         return tf.reduce_mean(generator_loss), tf.reduce_mean(discriminator_loss)
