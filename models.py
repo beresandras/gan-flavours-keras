@@ -18,7 +18,7 @@ class GAN(keras.Model):
         self.generator.summary()
         self.discriminator.summary()
 
-        self.noise_size = self.generator.input_shape[1]
+        self.noise_size = self.generator.input_shape[3]
         self.one_sided_label_smoothing = one_sided_label_smoothing
         self.ema = ema
 
@@ -62,7 +62,7 @@ class GAN(keras.Model):
         ]
 
     def generate(self, batch_size, training):
-        latent_samples = tf.random.normal(shape=(batch_size, self.noise_size))
+        latent_samples = tf.random.normal(shape=(batch_size, 1, 1, self.noise_size))
         if training:
             generated_images = self.generator(latent_samples, training)
         else:
@@ -74,7 +74,7 @@ class GAN(keras.Model):
             num_images = num_rows * num_cols
             if self.latent_samples is None:
                 self.latent_samples = tf.random.normal(
-                    shape=(num_images, self.noise_size)
+                    shape=(num_images, 1, 1, self.noise_size)
                 )
             generated_images_1 = self.ema_generator(self.latent_samples, training=False)
             generated_images_2 = self.generate(num_images, training=False)

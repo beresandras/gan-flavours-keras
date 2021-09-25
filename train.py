@@ -7,7 +7,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 from dataset import prepare_dataset
-from algorithms import MiniMaxGAN, NonSaturatingGAN, LeastSquaresGAN, WassersteinGAN
+from algorithms import NonSaturatingGAN
 
 tf.get_logger().setLevel("WARN")  # suppress info-level logs
 
@@ -36,37 +36,40 @@ for Algorithm in [NonSaturatingGAN]:
     model = Algorithm(
         generator=keras.Sequential(
             [
-                layers.InputLayer(input_shape=(noise_size,)),
-                layers.Dense(
-                    4 * 4 * width, kernel_initializer=initializer, use_bias=False
+                layers.InputLayer(input_shape=(1, 1, noise_size)),
+                layers.Conv2DTranspose(
+                    width,
+                    kernel_size=4,
+                    kernel_initializer=initializer,
+                    use_bias=False,
                 ),
                 layers.BatchNormalization(scale=False),
                 layers.ReLU(),
                 layers.Reshape(target_shape=(4, 4, width)),
-                layers.UpSampling2D(size=2),
-                layers.Conv2D(
+                layers.Conv2DTranspose(
                     width,
-                    kernel_size=3,
+                    kernel_size=4,
+                    strides=2,
                     padding="same",
                     kernel_initializer=initializer,
                     use_bias=False,
                 ),
                 layers.BatchNormalization(scale=False),
                 layers.ReLU(),
-                layers.UpSampling2D(size=2),
-                layers.Conv2D(
+                layers.Conv2DTranspose(
                     width,
-                    kernel_size=3,
+                    kernel_size=4,
+                    strides=2,
                     padding="same",
                     kernel_initializer=initializer,
                     use_bias=False,
                 ),
                 layers.BatchNormalization(scale=False),
                 layers.ReLU(),
-                layers.UpSampling2D(size=2),
-                layers.Conv2D(
+                layers.Conv2DTranspose(
                     image_channels,
-                    kernel_size=3,
+                    kernel_size=4,
+                    strides=2,
                     padding="same",
                     kernel_initializer=initializer,
                     activation="sigmoid",
@@ -79,7 +82,7 @@ for Algorithm in [NonSaturatingGAN]:
                 layers.InputLayer(input_shape=(image_size, image_size, image_channels)),
                 layers.Conv2D(
                     width,
-                    kernel_size=3,
+                    kernel_size=4,
                     strides=2,
                     padding="same",
                     kernel_initializer=initializer,
@@ -89,7 +92,7 @@ for Algorithm in [NonSaturatingGAN]:
                 layers.LeakyReLU(alpha=leaky_relu_slope),
                 layers.Conv2D(
                     width,
-                    kernel_size=3,
+                    kernel_size=4,
                     strides=2,
                     padding="same",
                     kernel_initializer=initializer,
@@ -99,7 +102,7 @@ for Algorithm in [NonSaturatingGAN]:
                 layers.LeakyReLU(alpha=leaky_relu_slope),
                 layers.Conv2D(
                     width,
-                    kernel_size=3,
+                    kernel_size=4,
                     strides=2,
                     padding="same",
                     kernel_initializer=initializer,
@@ -107,9 +110,13 @@ for Algorithm in [NonSaturatingGAN]:
                 ),
                 layers.BatchNormalization(scale=False),
                 layers.LeakyReLU(alpha=leaky_relu_slope),
-                layers.Flatten(),
                 layers.Dropout(dropout_rate),
-                layers.Dense(1, kernel_initializer=initializer),
+                layers.Conv2D(
+                    1,
+                    kernel_size=4,
+                    kernel_initializer=initializer,
+                ),
+                layers.Flatten(),
             ],
             name="discriminator",
         ),
