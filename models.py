@@ -8,15 +8,17 @@ from metrics import KID
 
 
 class GAN(keras.Model):
-    def __init__(self, generator, discriminator, one_sided_label_smoothing, ema):
+    def __init__(self, id, generator, discriminator, one_sided_label_smoothing, ema):
         super().__init__()
+
+        self.id = id
 
         self.generator = generator
         self.ema_generator = keras.models.clone_model(self.generator)
         self.discriminator = discriminator
 
-        self.generator.summary()
-        self.discriminator.summary()
+        # self.generator.summary()
+        # self.discriminator.summary()
 
         self.noise_size = self.generator.input_shape[3]
         self.one_sided_label_smoothing = one_sided_label_smoothing
@@ -91,9 +93,7 @@ class GAN(keras.Model):
                     plt.axis("off")
             plt.tight_layout()
             plt.savefig(
-                "images/{}_{}_{:.3f}.png".format(
-                    self.__class__.__name__, epoch + 1, self.kid.result()
-                )
+                "images/{}_{}_{:.3f}.png".format(self.id, epoch + 1, self.kid.result())
             )
             plt.close()
 

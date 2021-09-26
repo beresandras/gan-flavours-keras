@@ -12,7 +12,7 @@ class KID(keras.metrics.Metric):
         self.kid_tracker = keras.metrics.Mean()
         self.encoder = keras.Sequential(
             [
-                layers.InputLayer(input_shape=(32, 32, 3)),
+                layers.InputLayer(input_shape=(64, 64, 3)),
                 preprocessing.Rescaling(255),
                 preprocessing.Resizing(height=75, width=75),
                 layers.Lambda(keras.applications.inception_v3.preprocess_input),

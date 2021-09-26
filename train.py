@@ -5,17 +5,16 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"  # suppress info-level logs
 import tensorflow as tf
 
 from tensorflow import keras
-from tensorflow.keras import layers
 
 from dataset import prepare_dataset
+from architecture import get_generator, get_discriminator
 from algorithms import NonSaturatingGAN
 
 tf.get_logger().setLevel("WARN")  # suppress info-level logs
 
 # hyperparameters
-num_epochs = 400
-image_size = 32
-image_channels = 3
+num_epochs = 160
+image_size = 64
 padding = 0.25
 batch_size = 128
 noise_size = 64
@@ -26,100 +25,22 @@ dropout_rate = 0.4
 initializer = keras.initializers.RandomNormal(stddev=0.02)
 ema = 0.99
 
+residuals = [False]
+transposeds = [True]
+
 # load STL10 dataset
 train_dataset = prepare_dataset("train", image_size, padding, batch_size)
 test_dataset = prepare_dataset("test", image_size, padding, batch_size)
 
 # select an algorithm
-for Algorithm in [NonSaturatingGAN]:
+for id, (residual, transposed) in enumerate(zip(residuals, transposeds)):
 
     # architecture
-    model = Algorithm(
-        generator=keras.Sequential(
-            [
-                layers.InputLayer(input_shape=(1, 1, noise_size)),
-                layers.Conv2DTranspose(
-                    width,
-                    kernel_size=4,
-                    kernel_initializer=initializer,
-                    use_bias=False,
-                ),
-                layers.BatchNormalization(scale=False),
-                layers.ReLU(),
-                layers.Reshape(target_shape=(4, 4, width)),
-                layers.Conv2DTranspose(
-                    width,
-                    kernel_size=4,
-                    strides=2,
-                    padding="same",
-                    kernel_initializer=initializer,
-                    use_bias=False,
-                ),
-                layers.BatchNormalization(scale=False),
-                layers.ReLU(),
-                layers.Conv2DTranspose(
-                    width,
-                    kernel_size=4,
-                    strides=2,
-                    padding="same",
-                    kernel_initializer=initializer,
-                    use_bias=False,
-                ),
-                layers.BatchNormalization(scale=False),
-                layers.ReLU(),
-                layers.Conv2DTranspose(
-                    image_channels,
-                    kernel_size=4,
-                    strides=2,
-                    padding="same",
-                    kernel_initializer=initializer,
-                    activation="sigmoid",
-                ),
-            ],
-            name="generator",
-        ),
-        discriminator=keras.Sequential(
-            [
-                layers.InputLayer(input_shape=(image_size, image_size, image_channels)),
-                layers.Conv2D(
-                    width,
-                    kernel_size=4,
-                    strides=2,
-                    padding="same",
-                    kernel_initializer=initializer,
-                    use_bias=False,
-                ),
-                layers.BatchNormalization(scale=False),
-                layers.LeakyReLU(alpha=leaky_relu_slope),
-                layers.Conv2D(
-                    width,
-                    kernel_size=4,
-                    strides=2,
-                    padding="same",
-                    kernel_initializer=initializer,
-                    use_bias=False,
-                ),
-                layers.BatchNormalization(scale=False),
-                layers.LeakyReLU(alpha=leaky_relu_slope),
-                layers.Conv2D(
-                    width,
-                    kernel_size=4,
-                    strides=2,
-                    padding="same",
-                    kernel_initializer=initializer,
-                    use_bias=False,
-                ),
-                layers.BatchNormalization(scale=False),
-                layers.LeakyReLU(alpha=leaky_relu_slope),
-                layers.Dropout(dropout_rate),
-                layers.Conv2D(
-                    1,
-                    kernel_size=4,
-                    kernel_initializer=initializer,
-                ),
-                layers.Flatten(),
-            ],
-            name="discriminator",
+    model = NonSaturatingGAN(
+        id=id,
+        generator=get_generator(noise_size, width, initializer, residual, transposed),
+        discriminator=get_discriminator(
+            image_size, width, initializer, leaky_relu_slope, dropout_rate, residual
         ),
         one_sided_label_smoothing=one_sided_label_smoothing,
         ema=ema,
@@ -132,7 +53,7 @@ for Algorithm in [NonSaturatingGAN]:
     )
 
     # checkpointing
-    checkpoint_path = "checkpoints/"
+    checkpoint_path = "checkpoints/model_{}".format(id)
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_path,
         save_weights_only=True,
@@ -158,6 +79,23 @@ for Algorithm in [NonSaturatingGAN]:
     plt.xlabel("epochs")
     plt.ylabel("KID")
     plt.tight_layout()
-    plt.savefig("graphs/kid.png")
+    plt.savefig("graphs/kid_{}.png".format(id))
 
     model.load_weights(checkpoint_path)
+
+    # generate images
+    num_rows = 8
+    num_cols = 8
+    num_images = num_rows * num_cols
+    generated_images = model.generate(num_images, training=False)
+
+    plt.figure(figsize=(num_cols * 1.5, num_rows * 1.5))
+    for row in range(num_rows):
+        for col in range(num_cols):
+            index = row * num_cols + col
+            plt.subplot(num_rows, num_cols, index + 1)
+            plt.imshow(generated_images[index])
+            plt.axis("off")
+    plt.tight_layout()
+    plt.savefig("images/_{}_final.png".format(id))
+    plt.close()
