@@ -13,7 +13,7 @@ from algorithms import NonSaturatingGAN
 tf.get_logger().setLevel("WARN")  # suppress info-level logs
 
 # hyperparameters
-num_epochs = 160
+num_epochs = 200
 image_size = 64
 padding = 0.25
 batch_size = 128
@@ -22,28 +22,32 @@ width = 128
 one_sided_label_smoothing = 0.1
 leaky_relu_slope = 0.2
 dropout_rate = 0.4
-initializer = keras.initializers.RandomNormal(stddev=0.02)
+initializer = keras.initializers.RandomNormal(stddev=0.02)  # "glorot_uniform"
 ema = 0.99
+target_accuracy = 0.8
+integration_steps = 1000
 
+algorithms = [NonSaturatingGAN]
 residuals = [False]
-transposeds = [True]
 
 # load STL10 dataset
 train_dataset = prepare_dataset("train", image_size, padding, batch_size)
 test_dataset = prepare_dataset("test", image_size, padding, batch_size)
 
 # select an algorithm
-for id, (residual, transposed) in enumerate(zip(residuals, transposeds)):
+for id, (Algorithm, residual) in enumerate(zip(algorithms, residuals)):
 
     # architecture
-    model = NonSaturatingGAN(
+    model = Algorithm(
         id=id,
-        generator=get_generator(noise_size, width, initializer, residual, transposed),
+        generator=get_generator(noise_size, width, initializer, residual=False),
         discriminator=get_discriminator(
             image_size, width, initializer, leaky_relu_slope, dropout_rate, residual
         ),
         one_sided_label_smoothing=one_sided_label_smoothing,
         ema=ema,
+        target_accuracy=target_accuracy,
+        integration_steps=integration_steps,
     )
 
     # optimizers

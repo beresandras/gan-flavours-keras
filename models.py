@@ -4,11 +4,21 @@ import tensorflow as tf
 from abc import abstractmethod
 from tensorflow import keras
 
+from augmentation import AdaptiveAugmenter
 from metrics import KID
 
 
 class GAN(keras.Model):
-    def __init__(self, id, generator, discriminator, one_sided_label_smoothing, ema):
+    def __init__(
+        self,
+        id,
+        generator,
+        discriminator,
+        one_sided_label_smoothing,
+        ema,
+        target_accuracy,
+        integration_steps,
+    ):
         super().__init__()
 
         self.id = id
@@ -16,9 +26,11 @@ class GAN(keras.Model):
         self.generator = generator
         self.ema_generator = keras.models.clone_model(self.generator)
         self.discriminator = discriminator
-
-        # self.generator.summary()
-        # self.discriminator.summary()
+        self.augmenter = AdaptiveAugmenter(
+            target_accuracy=target_accuracy,
+            integration_steps=integration_steps,
+            input_shape=self.generator.output_shape[1:],
+        )
 
         self.noise_size = self.generator.input_shape[3]
         self.one_sided_label_smoothing = one_sided_label_smoothing
@@ -36,7 +48,8 @@ class GAN(keras.Model):
         self.discriminator_loss_tracker = keras.metrics.Mean(name="d_loss")
         self.real_accuracy = keras.metrics.BinaryAccuracy(name="real_acc")
         self.generated_accuracy = keras.metrics.BinaryAccuracy(name="gen_acc")
-        self.kid = KID()
+        self.augmentation_probability_tracker = keras.metrics.Mean(name="aug_p")
+        self.kid = KID(input_shape=self.generator.output_shape[1:])
 
     @property
     def metrics(self):
@@ -45,21 +58,7 @@ class GAN(keras.Model):
             self.discriminator_loss_tracker,
             self.real_accuracy,
             self.generated_accuracy,
-            self.kid,
-        ]
-
-    @property
-    def train_metrics(self):
-        return [
-            self.generator_loss_tracker,
-            self.discriminator_loss_tracker,
-            self.real_accuracy,
-            self.generated_accuracy,
-        ]
-
-    @property
-    def val_metrics(self):
-        return [
+            self.augmentation_probability_tracker,
             self.kid,
         ]
 
@@ -106,8 +105,12 @@ class GAN(keras.Model):
 
         with tf.GradientTape(persistent=True) as tape:
             generated_images = self.generate(batch_size, training=True)
-            real_logits = self.discriminator(real_images, training=True)
-            generated_logits = self.discriminator(generated_images, training=True)
+            real_logits = self.discriminator(
+                self.augmenter(real_images, training=True), training=True
+            )
+            generated_logits = self.discriminator(
+                self.augmenter(generated_images, training=True), training=True
+            )
             generator_loss, discriminator_loss = self.adversarial_loss(
                 real_logits, generated_logits
             )
@@ -125,19 +128,22 @@ class GAN(keras.Model):
             zip(discriminator_gradients, self.discriminator.trainable_weights)
         )
 
+        self.augmenter.update(real_logits)
+
         self.generator_loss_tracker.update_state(generator_loss)
         self.discriminator_loss_tracker.update_state(discriminator_loss)
         self.real_accuracy.update_state(1.0, tf.keras.activations.sigmoid(real_logits))
         self.generated_accuracy.update_state(
             0.0, tf.keras.activations.sigmoid(generated_logits)
         )
+        self.augmentation_probability_tracker.update_state(self.augmenter.probability)
 
         for weight, ema_weight in zip(
             self.generator.weights, self.ema_generator.weights
         ):
             ema_weight.assign(self.ema * ema_weight + (1 - self.ema) * weight)
 
-        return {m.name: m.result() for m in self.train_metrics}
+        return {m.name: m.result() for m in self.metrics[:-1]}
 
     def test_step(self, real_images):
         batch_size = tf.shape(real_images)[0]
@@ -146,4 +152,4 @@ class GAN(keras.Model):
 
         self.kid.update_state(real_images, generated_images)
 
-        return {m.name: m.result() for m in self.val_metrics}
+        return {self.kid.name: self.kid.result()}

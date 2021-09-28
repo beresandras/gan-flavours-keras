@@ -6,13 +6,13 @@ from tensorflow.keras.layers.experimental import preprocessing
 
 
 class KID(keras.metrics.Metric):
-    def __init__(self, name="kid", **kwargs):
+    def __init__(self, name="kid", input_shape=None, **kwargs):
         super().__init__(name=name, **kwargs)
 
         self.kid_tracker = keras.metrics.Mean()
         self.encoder = keras.Sequential(
             [
-                layers.InputLayer(input_shape=(64, 64, 3)),
+                layers.InputLayer(input_shape=input_shape),
                 preprocessing.Rescaling(255),
                 preprocessing.Resizing(height=75, width=75),
                 layers.Lambda(keras.applications.inception_v3.preprocess_input),

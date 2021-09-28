@@ -1,8 +1,10 @@
 from tensorflow import keras
 from tensorflow.keras import layers
 
+# from tensorflow_addons.layers import SpectralNormalization
 
-def get_generator(noise_size, width, initializer, residual, transposed):
+
+def get_generator(noise_size, width, initializer, residual, transposed=True):
     input = layers.Input(shape=(1, 1, noise_size))
 
     x = layers.Conv2DTranspose(
