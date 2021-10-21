@@ -28,16 +28,15 @@ discriminator_lr = 2e-4
 beta_1 = 0.5
 beta_2 = 0.999
 
-# architecture (g: generator, d: discriminator)
+# architecture
 noise_size = 64
 width = 128
 initializer = "glorot_uniform"
 residual = False
-g_transposed = True  # transposed convs vs upsampling + convs in g
-g_interpolation = "bilinear"  # only used when the g is residual or not transposed
-d_leaky_relu_slope = 0.2
-d_dropout_rate = 0.4
-d_spectral_norm = False
+transposed = True  # transposed convs vs upsampling + convs in generator
+leaky_relu_slope = 0.2
+dropout_rate = 0.4
+spectral_norm = False
 
 # adaptive discriminator augmentation
 target_accuracy = None  # 0.8  # set to None to disable
@@ -53,17 +52,15 @@ test_dataset = prepare_dataset("test", image_size, padding, batch_size)
 # create model
 model = NonSaturatingGAN(
     id=offset_id + id,
-    generator=get_generator(
-        noise_size, width, initializer, residual, g_transposed, g_interpolation
-    ),
+    generator=get_generator(noise_size, width, initializer, residual, transposed),
     discriminator=get_discriminator(
         image_size,
         width,
         initializer,
         residual,
-        d_leaky_relu_slope,
-        d_dropout_rate,
-        d_spectral_norm,
+        leaky_relu_slope,
+        dropout_rate,
+        spectral_norm,
     ),
     one_sided_label_smoothing=one_sided_label_smoothing,
     ema=ema,

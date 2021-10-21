@@ -1,7 +1,6 @@
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.layers.experimental import preprocessing
-
 from tensorflow_addons.layers import SpectralNormalization
 
 
@@ -12,7 +11,7 @@ def spectral_norm_wrapper(layer, spectral_norm):
         return layer
 
 
-def get_generator(noise_size, width, initializer, residual, transposed, interpolation):
+def get_generator(noise_size, width, initializer, residual, transposed):
     input = layers.Input(shape=(1, 1, noise_size))
 
     x = layers.Conv2DTranspose(
@@ -24,10 +23,10 @@ def get_generator(noise_size, width, initializer, residual, transposed, interpol
 
     for _ in range(3):
         if residual:
-            x_skip = layers.UpSampling2D(size=2, interpolation=interpolation)(x)
+            x_skip = layers.UpSampling2D(size=2, interpolation="bilinear")(x)
+        x = layers.BatchNormalization(scale=False)(x)
+        x = layers.ReLU()(x)
         if transposed:
-            x = layers.BatchNormalization(scale=False)(x)
-            x = layers.ReLU()(x)
             x = layers.Conv2DTranspose(
                 width,
                 kernel_size=4,
@@ -37,8 +36,7 @@ def get_generator(noise_size, width, initializer, residual, transposed, interpol
                 use_bias=residual,
             )(x)
         else:
-            x = layers.BatchNormalization(scale=False)(x_skip)
-            x = layers.ReLU()(x)
+            x = layers.UpSampling2D(size=2, interpolation="nearest")(x)
             x = layers.Conv2D(
                 width,
                 kernel_size=4,
@@ -50,9 +48,9 @@ def get_generator(noise_size, width, initializer, residual, transposed, interpol
             x = layers.Add()([x_skip, x])
             x = preprocessing.Rescaling(scale=0.5 ** 0.5)(x)
 
+    x = layers.BatchNormalization(scale=False)(x)
+    x = layers.ReLU()(x)
     if transposed:
-        x = layers.BatchNormalization(scale=False)(x)
-        x = layers.ReLU()(x)
         output = layers.Conv2DTranspose(
             3,
             kernel_size=4,
@@ -62,9 +60,7 @@ def get_generator(noise_size, width, initializer, residual, transposed, interpol
             activation="sigmoid",
         )(x)
     else:
-        x = layers.UpSampling2D(size=2, interpolation=interpolation)(x)
-        x = layers.BatchNormalization(scale=False)(x)
-        x = layers.ReLU()(x)
+        x = layers.UpSampling2D(size=2, interpolation="nearest")(x)
         output = layers.Conv2D(
             3,
             kernel_size=4,
@@ -80,9 +76,9 @@ def get_discriminator(
     image_size,
     width,
     initializer,
+    residual,
     leaky_relu_slope,
     dropout_rate,
-    residual,
     spectral_norm,
 ):
     input = layers.Input(shape=(image_size, image_size, 3))
