@@ -105,12 +105,14 @@ class GAN(keras.Model):
 
         with tf.GradientTape(persistent=True) as tape:
             generated_images = self.generate(batch_size, training=True)
-            real_logits = self.discriminator(
-                self.augmenter(real_images, training=True), training=True
-            )
-            generated_logits = self.discriminator(
-                self.augmenter(generated_images, training=True), training=True
-            )
+
+            if self.augmenter.target_accuracy is not None:
+                real_images = self.augmenter(real_images, training=True)
+                generated_images = self.augmenter(generated_images, training=True)
+
+            real_logits = self.discriminator(real_images, training=True)
+            generated_logits = self.discriminator(generated_images, training=True)
+
             generator_loss, discriminator_loss = self.adversarial_loss(
                 real_logits, generated_logits
             )
@@ -128,7 +130,8 @@ class GAN(keras.Model):
             zip(discriminator_gradients, self.discriminator.trainable_weights)
         )
 
-        self.augmenter.update(real_logits)
+        if self.augmenter.target_accuracy is not None:
+            self.augmenter.update(real_logits)
 
         self.generator_loss_tracker.update_state(generator_loss)
         self.discriminator_loss_tracker.update_state(discriminator_loss)
