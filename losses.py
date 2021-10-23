@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from tensorflow import keras
-from models import GAN
+from model import GAN
 
 
 class MiniMaxGAN(GAN):

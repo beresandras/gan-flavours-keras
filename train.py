@@ -9,7 +9,7 @@ from tensorflow import keras
 
 from dataset import prepare_dataset
 from architecture import get_generator, get_discriminator
-from algorithms import NonSaturatingGAN
+from losses import NonSaturatingGAN
 
 tf.get_logger().setLevel("WARN")  # suppress info-level logs
 
