@@ -11,7 +11,7 @@ def spectral_norm_wrapper(layer, spectral_norm):
         return layer
 
 
-def get_generator(noise_size, width, initializer, residual, transposed):
+def get_generator(noise_size, depth, width, initializer, residual, transposed):
     input = layers.Input(shape=(1, 1, noise_size))
 
     x = layers.Conv2DTranspose(
@@ -21,7 +21,7 @@ def get_generator(noise_size, width, initializer, residual, transposed):
         use_bias=False,
     )(input)
 
-    for _ in range(3):
+    for _ in range(depth - 1):
         if residual:
             x_skip = layers.UpSampling2D(size=2, interpolation="bilinear")(x)
         x = layers.BatchNormalization(scale=False)(x)
@@ -74,6 +74,7 @@ def get_generator(noise_size, width, initializer, residual, transposed):
 
 def get_discriminator(
     image_size,
+    depth,
     width,
     initializer,
     residual,
@@ -95,7 +96,7 @@ def get_discriminator(
         spectral_norm=spectral_norm,
     )(input)
 
-    for _ in range(3):
+    for _ in range(depth - 1):
         if residual:
             x_skip = layers.AveragePooling2D(pool_size=2)(x)
         x = layers.BatchNormalization(scale=False)(x)

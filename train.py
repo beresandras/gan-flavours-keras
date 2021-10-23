@@ -1,4 +1,5 @@
 import os
+import matplotlib
 import matplotlib.pyplot as plt
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"  # suppress info-level logs
@@ -8,14 +9,16 @@ from tensorflow import keras
 
 from dataset import prepare_dataset
 from architecture import get_generator, get_discriminator
-from algorithms import MiniMaxGAN, NonSaturatingGAN, LeastSquaresGAN, HingeGAN
+from algorithms import NonSaturatingGAN
 
 tf.get_logger().setLevel("WARN")  # suppress info-level logs
+
+matplotlib.use("Agg")
 
 # hyperparameters
 
 # data
-num_epochs = 300
+num_epochs = 400
 image_size = 64
 padding = 0.25
 
@@ -30,6 +33,7 @@ beta_2 = 0.999
 
 # architecture
 noise_size = 64
+depth = 4  # number of up- and downsampling layers
 width = 128
 initializer = "glorot_uniform"
 residual = False
@@ -43,7 +47,7 @@ target_accuracy = None  # 0.8  # set to None to disable
 integration_steps = 1000
 
 offset_id = 0
-id = 2
+id = 0
 
 # load dataset
 train_dataset = prepare_dataset("train", image_size, padding, batch_size)
@@ -52,9 +56,12 @@ test_dataset = prepare_dataset("test", image_size, padding, batch_size)
 # create model
 model = NonSaturatingGAN(
     id=offset_id + id,
-    generator=get_generator(noise_size, width, initializer, residual, transposed),
+    generator=get_generator(
+        noise_size, depth, width, initializer, residual, transposed
+    ),
     discriminator=get_discriminator(
         image_size,
+        depth,
         width,
         initializer,
         residual,
