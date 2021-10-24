@@ -9,15 +9,19 @@ class KID(keras.metrics.Metric):
     def __init__(self, name="kid", input_shape=None, **kwargs):
         super().__init__(name=name, **kwargs)
 
+        self.image_size = 75
+
         self.kid_tracker = keras.metrics.Mean()
         self.encoder = keras.Sequential(
             [
                 layers.InputLayer(input_shape=input_shape),
-                preprocessing.Rescaling(255),
-                preprocessing.Resizing(height=75, width=75),
+                preprocessing.Rescaling(255.0),
+                preprocessing.Resizing(height=self.image_size, width=self.image_size),
                 layers.Lambda(keras.applications.inception_v3.preprocess_input),
                 keras.applications.InceptionV3(
-                    include_top=False, input_shape=(75, 75, 3), weights="imagenet"
+                    include_top=False,
+                    input_shape=(self.image_size, self.image_size, 3),
+                    weights="imagenet",
                 ),
                 layers.GlobalAveragePooling2D(),
             ]
@@ -32,22 +36,22 @@ class KID(keras.metrics.Metric):
         features_dimensions = tf.cast(tf.shape(real_features)[1], dtype=tf.float32)
 
         kernel_real = (
-            real_features @ tf.transpose(real_features) / features_dimensions + 1
-        ) ** 3
+            real_features @ tf.transpose(real_features) / features_dimensions + 1.0
+        ) ** 3.0
         kernel_generated = (
             generated_features @ tf.transpose(generated_features) / features_dimensions
-            + 1
-        ) ** 3
+            + 1.0
+        ) ** 3.0
         kernel_cross = (
-            real_features @ tf.transpose(generated_features) / features_dimensions + 1
-        ) ** 3
+            real_features @ tf.transpose(generated_features) / features_dimensions + 1.0
+        ) ** 3.0
 
         kid = (
-            tf.reduce_sum(kernel_real * (1 - tf.eye(batch_size)))
-            / (batch_size_f * (batch_size_f - 1))
-            + tf.reduce_sum(kernel_generated * (1 - tf.eye(batch_size)))
-            / (batch_size_f * (batch_size_f - 1))
-            - 2 * tf.reduce_mean(kernel_cross)
+            tf.reduce_sum(kernel_real * (1.0 - tf.eye(batch_size)))
+            / (batch_size_f * (batch_size_f - 1.0))
+            + tf.reduce_sum(kernel_generated * (1.0 - tf.eye(batch_size)))
+            / (batch_size_f * (batch_size_f - 1.0))
+            - 2.0 * tf.reduce_mean(kernel_cross)
         )
 
         self.kid_tracker.update_state(kid)
