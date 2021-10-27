@@ -20,7 +20,7 @@ matplotlib.use("Agg")
 # data
 num_epochs = 400
 image_size = 64
-padding = 0.25
+dataset_name = "caltech_birds2011"  # "celeb_a"
 
 # optimization
 batch_size = 128
@@ -43,15 +43,15 @@ dropout_rate = 0.4
 spectral_norm = False
 
 # adaptive discriminator augmentation
-target_accuracy = None  # 0.8  # set to None to disable
+target_accuracy = 0.85  # set to None to disable
 integration_steps = 1000
 
 offset_id = 0
 id = 0
 
 # load dataset
-train_dataset = prepare_dataset("train", image_size, padding, batch_size)
-test_dataset = prepare_dataset("test", image_size, padding, batch_size)
+train_dataset = prepare_dataset(dataset_name, "train", image_size, batch_size)
+test_dataset = prepare_dataset(dataset_name, "test", image_size, batch_size)
 
 # create model
 model = NonSaturatingGAN(
