@@ -75,6 +75,9 @@ def prepare_dataset(dataset_name, split, image_size, batch_size):
         "celeb_a": preprocess_celeba,
     }
     preprocess_image = preprocessors[dataset_name](image_size)
+
+    # the validation dataset is shuffled as well, because data order matters
+    # for the KID calculation
     return (
         tfds.load(
             dataset_name,

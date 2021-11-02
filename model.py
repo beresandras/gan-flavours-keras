@@ -6,6 +6,7 @@ from tensorflow import keras
 
 from augmentation import AdaptiveAugmenter
 from metrics import KID
+from utils import step
 
 
 class GAN(keras.Model):
@@ -64,6 +65,7 @@ class GAN(keras.Model):
 
     def generate(self, batch_size, training):
         latent_samples = tf.random.normal(shape=(batch_size, 1, 1, self.noise_size))
+        # using ema_generator during inference
         if training:
             generated_images = self.generator(latent_samples, training)
         else:
@@ -71,6 +73,7 @@ class GAN(keras.Model):
         return generated_images
 
     def plot_images(self, epoch, logs, num_rows=2, num_cols=8, interval=5):
+        # plot random generated images for visual evaluation of generation quality
         if (epoch + 1) % interval == 0:
             num_images = num_rows * num_cols
             if self.latent_samples is None:
@@ -103,13 +106,17 @@ class GAN(keras.Model):
     def train_step(self, real_images):
         batch_size = tf.shape(real_images)[0]
 
+        # use persistent gradient tape because gradients will be calculated twice
         with tf.GradientTape(persistent=True) as tape:
             generated_images = self.generate(batch_size, training=True)
 
+            # gradient is calculated through the image augmentation
             if self.augmenter.target_accuracy is not None:
                 real_images = self.augmenter(real_images, training=True)
                 generated_images = self.augmenter(generated_images, training=True)
 
+            # separate forward passes for the real and generated images, meaning
+            # that batch normalization is applied separately
             real_logits = self.discriminator(real_images, training=True)
             generated_logits = self.discriminator(generated_images, training=True)
 
@@ -117,6 +124,7 @@ class GAN(keras.Model):
                 real_logits, generated_logits
             )
 
+        # calculate gradients and update weights
         generator_gradients = tape.gradient(
             generator_loss, self.generator.trainable_weights
         )
@@ -130,22 +138,24 @@ class GAN(keras.Model):
             zip(discriminator_gradients, self.discriminator.trainable_weights)
         )
 
+        # update the augmentation probability based on the discriminator's performance
         if self.augmenter.target_accuracy is not None:
             self.augmenter.update(real_logits)
 
         self.generator_loss_tracker.update_state(generator_loss)
         self.discriminator_loss_tracker.update_state(discriminator_loss)
-        self.real_accuracy.update_state(1.0, tf.keras.activations.sigmoid(real_logits))
-        self.generated_accuracy.update_state(
-            0.0, tf.keras.activations.sigmoid(generated_logits)
-        )
+        self.real_accuracy.update_state(1.0, step(real_logits))
+        self.generated_accuracy.update_state(0.0, step(generated_logits))
         self.augmentation_probability_tracker.update_state(self.augmenter.probability)
 
+        # track the exponential moving average of the generator's weights to decrease
+        # variance in the generation quality
         for weight, ema_weight in zip(
             self.generator.weights, self.ema_generator.weights
         ):
             ema_weight.assign(self.ema * ema_weight + (1 - self.ema) * weight)
 
+        # KID is not measured during the training phase for computational efficiency
         return {m.name: m.result() for m in self.metrics[:-1]}
 
     def test_step(self, real_images):
@@ -155,4 +165,5 @@ class GAN(keras.Model):
 
         self.kid.update_state(real_images, generated_images)
 
+        # only KID is measured during the evaluation phase for computational efficiency
         return {self.kid.name: self.kid.result()}

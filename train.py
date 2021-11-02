@@ -43,7 +43,7 @@ dropout_rate = 0.4
 spectral_norm = False
 
 # adaptive discriminator augmentation
-target_accuracy = 0.85  # set to None to disable
+target_accuracy = None  # 0.85, set to None to disable
 integration_steps = 1000
 
 offset_id = 0
@@ -106,6 +106,7 @@ history = model.fit(
     ],
 )
 
+# load best model
 model.load_weights(checkpoint_path)
 
 # generate images

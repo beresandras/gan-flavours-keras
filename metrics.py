@@ -9,9 +9,13 @@ class KID(keras.metrics.Metric):
     def __init__(self, name="kid", input_shape=None, **kwargs):
         super().__init__(name=name, **kwargs)
 
+        # resolution of images for the KID estimation
         self.image_size = 75
 
+        # KID is estimated per batch and is averaged across batches
         self.kid_tracker = keras.metrics.Mean()
+
+        # a pretrained InceptionV3 is used without its classification layer
         self.encoder = keras.Sequential(
             [
                 layers.InputLayer(input_shape=input_shape),
@@ -56,6 +60,8 @@ class KID(keras.metrics.Metric):
 
         # update the average KID estimate
         self.kid_tracker.update_state(kid)
+
+        return kid  # this is not necessary but useful for debugging
 
     def result(self):
         return self.kid_tracker.result()
