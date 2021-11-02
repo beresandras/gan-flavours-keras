@@ -9,7 +9,13 @@ from tensorflow import keras
 
 from dataset import prepare_dataset
 from architecture import get_generator, get_discriminator
-from losses import NonSaturatingGAN
+from losses import (
+    MiniMaxGAN,
+    NonSaturatingGAN,
+    LeastSquaresGAN,
+    HingeGAN,
+    WassersteinGAN,
+)
 
 tf.get_logger().setLevel("WARN")  # suppress info-level logs
 

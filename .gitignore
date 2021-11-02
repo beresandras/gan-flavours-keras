@@ -4,5 +4,7 @@
 images*/
 checkpoints*/
 graphs*/
-generate.py
 hall_of_fame/
+generate.py
+gif.py
+pick.py

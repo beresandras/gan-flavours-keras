@@ -42,6 +42,11 @@ class NonSaturatingGAN(GAN):
 
 class LeastSquaresGAN(GAN):
     def adversarial_loss(self, real_logits, generated_logits):
+        # note: in the paper, real_labels = 1.0, generated_labels = 0.0 is used
+        # I changed that to real_labels = 1.0, generated_labels = -1.0
+        # to make 0.0 the decision boundary, similarly to the other losses
+        # this should make no difference when the discriminator is unregularized
+
         batch_size = tf.shape(real_logits)[0]
         real_labels = tf.ones(shape=(batch_size, 1))
         generated_labels = -tf.ones(shape=(batch_size, 1))
@@ -57,6 +62,9 @@ class LeastSquaresGAN(GAN):
 
 class WassersteinGAN(GAN):
     def adversarial_loss(self, real_logits, generated_logits):
+        # note: theoretically, if the discriminator is not Lipschitz-constrained,
+        # these loss terms can grow indefinitely
+
         generator_loss = -generated_logits
         discriminator_loss = -real_logits + generated_logits
 
