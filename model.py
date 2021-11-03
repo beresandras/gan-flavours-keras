@@ -19,6 +19,7 @@ class GAN(keras.Model):
         ema,
         target_accuracy,
         integration_steps,
+        plot_interval,
     ):
         super().__init__()
 
@@ -36,6 +37,7 @@ class GAN(keras.Model):
         self.noise_size = self.generator.input_shape[3]
         self.one_sided_label_smoothing = one_sided_label_smoothing
         self.ema = ema
+        self.plot_interval = plot_interval
 
         self.latent_samples = None
 
@@ -72,9 +74,9 @@ class GAN(keras.Model):
             generated_images = self.ema_generator(latent_samples, training)
         return generated_images
 
-    def plot_images(self, epoch, logs, num_rows=2, num_cols=8, interval=5):
+    def plot_images(self, epoch, logs, num_rows=2, num_cols=8):
         # plot random generated images for visual evaluation of generation quality
-        if (epoch + 1) % interval == 0:
+        if (epoch + 1) % self.plot_interval == 0:
             num_images = num_rows * num_cols
             if self.latent_samples is None:
                 self.latent_samples = tf.random.normal(

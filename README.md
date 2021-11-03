@@ -13,6 +13,8 @@ This repository contains:
     * For computational efficiency, the images are evaluated at the minimal possible resolution (75x75 instead of 299x299), therefore the exact values might not be comparable with other implementations.
     * For computational efficiency, the metric is only measured on the validation splits of the datasets.
 
+Try it out in a Colab Notebook (good results take around 2 hours of training): [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/beresandras/gan-flavours-keras/blob/master/gan_flavours_keras.ipynb)
+
 ## Caltech Birds 2011 (CUB-200)
 
 * 6000 training images
