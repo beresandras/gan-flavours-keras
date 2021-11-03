@@ -69,10 +69,19 @@ def preprocess_celeba(image_size, crop_size=140):
     return preprocess_image
 
 
+def preprocess_cifar(image_size):
+    def preprocess_image(data):
+        # will always have a resolution of 32x32
+        return tf.image.convert_image_dtype(data["image"], tf.float32)
+
+    return preprocess_image
+
+
 def prepare_dataset(dataset_name, split, image_size, batch_size):
     preprocessors = {
         "caltech_birds2011": preprocess_birds,
         "celeb_a": preprocess_celeba,
+        "cifar10": preprocess_cifar,
     }
     preprocess_image = preprocessors[dataset_name](image_size)
 

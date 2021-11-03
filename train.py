@@ -24,11 +24,11 @@ matplotlib.use("Agg")
 # hyperparameters
 
 # data
-image_size = 64
-# the datasets might be unavailable for download sometimes
-dataset_name = "caltech_birds2011"  # "celeb_a"
-num_epochs = 400  # 25
-plot_interval = 5  # 1
+# some datasets might be unavailable for download at times
+dataset_name = "caltech_birds2011"  # "celeb_a", "cifar10"
+image_size = 64  # 64, 32
+num_epochs = 400  # 25, 100
+plot_interval = 5  # 1, 2
 
 # optimization
 batch_size = 128
@@ -41,7 +41,7 @@ beta_2 = 0.999
 
 # architecture
 noise_size = 64
-depth = 4  # number of up- and downsampling layers
+depth = 4  # number of up- and downsampling layers, change with resolution
 width = 128
 initializer = "glorot_uniform"
 residual = False
