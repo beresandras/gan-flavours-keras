@@ -57,7 +57,7 @@ id = 0
 
 # load dataset
 train_dataset = prepare_dataset(dataset_name, "train", image_size, batch_size)
-test_dataset = prepare_dataset(dataset_name, "test", image_size, batch_size)
+val_dataset = prepare_dataset(dataset_name, "test", image_size, batch_size)
 
 # create model
 model = NonSaturatingGAN(
@@ -105,7 +105,7 @@ checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
 history = model.fit(
     train_dataset,
     epochs=num_epochs,
-    validation_data=test_dataset,
+    validation_data=val_dataset,
     callbacks=[
         keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images),
         checkpoint_callback,
