@@ -25,6 +25,7 @@ matplotlib.use("Agg")
 
 # data
 image_size = 64
+# the datasets might be unavailable for download sometimes
 dataset_name = "caltech_birds2011"  # "celeb_a"
 num_epochs = 400  # 25
 plot_interval = 5  # 1
