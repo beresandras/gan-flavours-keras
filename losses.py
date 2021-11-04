@@ -79,3 +79,37 @@ class HingeGAN(GAN):
         )
 
         return tf.reduce_mean(generator_loss), tf.reduce_mean(discriminator_loss)
+
+
+class RelativisticGAN(GAN):
+    def adversarial_loss(self, real_logits, generated_logits):
+        batch_size = tf.shape(real_logits)[0]
+        real_labels = tf.ones(shape=(batch_size, 1))
+
+        generator_loss = keras.losses.binary_crossentropy(
+            real_labels, generated_logits - real_logits, from_logits=True
+        )
+        discriminator_loss = keras.losses.binary_crossentropy(
+            real_labels, real_logits - generated_logits, from_logits=True
+        )
+
+        return tf.reduce_mean(generator_loss), tf.reduce_mean(discriminator_loss)
+
+
+class RelativisticAverageGAN(GAN):
+    def adversarial_loss(self, real_logits, generated_logits):
+        batch_size = tf.shape(real_logits)[0]
+        real_labels = tf.ones(shape=(batch_size, 1))
+
+        generator_loss = keras.losses.binary_crossentropy(
+            real_labels,
+            generated_logits - tf.reduce_mean(real_logits),
+            from_logits=True,
+        )
+        discriminator_loss = keras.losses.binary_crossentropy(
+            real_labels,
+            real_logits - tf.reduce_mean(generated_logits),
+            from_logits=True,
+        )
+
+        return tf.reduce_mean(generator_loss), tf.reduce_mean(discriminator_loss)

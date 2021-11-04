@@ -14,6 +14,8 @@ from losses import (
     LeastSquaresGAN,
     HingeGAN,
     WassersteinGAN,
+    RelativisticGAN,
+    RelativisticAverageGAN,
 )
 from utils import generate_images_with, plot_history
 
