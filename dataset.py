@@ -47,6 +47,29 @@ def preprocess_birds(image_size, padding=0.25):
     return preprocess_image
 
 
+def preprocess_flowers(image_size):
+    def preprocess_image(data):
+        # center crop image
+        height = tf.shape(data["image"])[0]
+        width = tf.shape(data["image"])[1]
+        crop_size = tf.minimum(height, width)
+        image = tf.image.crop_to_bounding_box(
+            data["image"],
+            (height - crop_size) // 2,
+            (width - crop_size) // 2,
+            crop_size,
+            crop_size,
+        )
+
+        # resize and clip
+        image = tf.image.resize(
+            image, size=[image_size, image_size], method=tf.image.ResizeMethod.AREA
+        )
+        return tf.clip_by_value(image / 255.0, 0.0, 1.0)
+
+    return preprocess_image
+
+
 def preprocess_celeba(image_size, crop_size=140):
     def preprocess_image(data):
         # center crop image
@@ -80,10 +103,23 @@ def preprocess_cifar(image_size):
 def prepare_dataset(dataset_name, split, image_size, batch_size):
     preprocessors = {
         "caltech_birds2011": preprocess_birds,
+        "oxford_flowers102": preprocess_flowers,
         "celeb_a": preprocess_celeba,
         "cifar10": preprocess_cifar,
     }
     preprocess_image = preprocessors[dataset_name](image_size)
+
+    split_index = {"train": 0, "validation": 1}
+    split_names = {
+        "caltech_birds2011": ["train", "test"],
+        "oxford_flowers102": [
+            "train[:70%]+validation[:70%]+test[:70%]",
+            "train[70%:]+validation[70%:]+test[70%:]",
+        ],
+        "celeb_a": ["train", "validation"],
+        "cifar10": ["train", "test"],
+    }
+    split = split_names[dataset_name][split_index[split]]
 
     # the validation dataset is shuffled as well, because data order matters
     # for the KID calculation

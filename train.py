@@ -27,10 +27,10 @@ matplotlib.use("Agg")
 
 # data
 # some datasets might be unavailable for download at times
-dataset_name = "caltech_birds2011"  # "celeb_a", "cifar10"
-image_size = 64  # 64, 32
-num_epochs = 400  # 25, 100
-plot_interval = 5  # 1, 2
+dataset_name = "caltech_birds2011"  # "oxford_flowers102", "celeb_a", "cifar10"
+image_size = 64  # 64, 64, 32
+num_epochs = 400  # 500, 25, 100
+plot_interval = 10  # 10, 1, 2
 
 # optimization
 batch_size = 128
@@ -60,7 +60,7 @@ id = 0
 
 # load dataset
 train_dataset = prepare_dataset(dataset_name, "train", image_size, batch_size)
-val_dataset = prepare_dataset(dataset_name, "test", image_size, batch_size)
+val_dataset = prepare_dataset(dataset_name, "validation", image_size, batch_size)
 
 # create model
 model = NonSaturatingGAN(
