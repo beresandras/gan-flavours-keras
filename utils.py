@@ -9,7 +9,7 @@ def step(values):
     return 0.5 * (1.0 + tf.sign(values))
 
 
-def generate_images_with(model, history, id, num_rows=8, num_cols=8):
+def generate_images_with(model, history, id, num_rows=8, num_cols=8, is_jupyter=False):
     num_images = num_rows * num_cols
     generated_images = model.generate(num_images, training=False)
 
@@ -21,20 +21,26 @@ def generate_images_with(model, history, id, num_rows=8, num_cols=8):
             plt.imshow(generated_images[index])
             plt.axis("off")
     plt.tight_layout()
-    plt.savefig(
-        "images/_{}_final_{:.3f}.png".format(id, min(history.history["val_kid"]))
-    )
+    if is_jupyter:
+        plt.show()
+    else:
+        plt.savefig(
+            "images/_{}_final_{:.3f}.png".format(id, min(history.history["val_kid"]))
+        )
     plt.close()
 
 
-def plot_history(history, id):
+def plot_history(history, id, is_jupyter=False):
     plt.figure(figsize=(6, 4))
     plt.plot(history.history["val_kid"])
     plt.xlabel("epochs")
     plt.ylabel("KID")
     plt.yscale("log")
     plt.tight_layout()
-    plt.savefig("graphs/kid_{}.png".format(id))
+    if is_jupyter:
+        plt.show()
+    else:
+        plt.savefig("graphs/kid_{}.png".format(id))
     plt.close()
 
     plt.figure(figsize=(6, 4))
@@ -42,5 +48,8 @@ def plot_history(history, id):
     plt.xlabel("epochs")
     plt.ylabel("augmentation probability")
     plt.tight_layout()
-    plt.savefig("graphs/aug_p_{}.png".format(id))
+    if is_jupyter:
+        plt.show()
+    else:
+        plt.savefig("graphs/aug_p_{}.png".format(id))
     plt.close()

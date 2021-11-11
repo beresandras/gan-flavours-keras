@@ -20,6 +20,7 @@ class GAN(keras.Model):
         target_accuracy,
         integration_steps,
         plot_interval,
+        is_jupyter=False,
     ):
         super().__init__()
 
@@ -38,6 +39,7 @@ class GAN(keras.Model):
         self.one_sided_label_smoothing = one_sided_label_smoothing
         self.ema = ema
         self.plot_interval = plot_interval
+        self.is_jupyter = is_jupyter
 
         self.latent_samples = None
 
@@ -96,9 +98,14 @@ class GAN(keras.Model):
                     plt.imshow(generated_images_2[index])
                     plt.axis("off")
             plt.tight_layout()
-            plt.savefig(
-                "images/{}_{}_{:.3f}.png".format(self.id, epoch + 1, self.kid.result())
-            )
+            if self.is_jupyter:
+                plt.show()
+            else:
+                plt.savefig(
+                    "images/{}_{}_{:.3f}.png".format(
+                        self.id, epoch + 1, self.kid.result()
+                    )
+                )
             plt.close()
 
     @abstractmethod
