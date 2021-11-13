@@ -14,7 +14,12 @@ This repository contains:
     * For computational efficiency, the images are evaluated at the minimal possible resolution (75x75 instead of 299x299), therefore the exact values might not be comparable with other implementations.
     * For computational efficiency, the metric is only measured on the validation splits of the datasets.
 
+[List of GAN training tips and tricks](https://keras.io/examples/generative/gan_ada/#gan-tips-and-tricks) based on experience with this repository.
+
 Try it out in a Colab Notebook (good results take around 2 hours of training): [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/beresandras/gan-flavours-keras/blob/master/gan_flavours_keras.ipynb)
+
+Cherry-picked 256x256 flowers (residual connections + no transposed convolutions):
+![hq flowers generated images](./assets/hq_flowers.png)
 
 ## Caltech Birds 2011 (CUB-200)
 
