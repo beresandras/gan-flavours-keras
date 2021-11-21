@@ -85,7 +85,7 @@ def preprocess_celeba(image_size, crop_size=140):
 
         # resize and clip
         image = tf.image.resize(
-            image, size=[image_size, image_size], method=tf.image.ResizeMethod.AREA
+            image, size=[image_size, image_size], method="bicubic", antialias=True
         )
         return tf.clip_by_value(image / 255.0, 0.0, 1.0)
 

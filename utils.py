@@ -24,9 +24,11 @@ def generate_images_with(model, history, id, num_rows=8, num_cols=8, is_jupyter=
     if is_jupyter:
         plt.show()
     else:
-        plt.savefig(
-            "images/_{}_final_{:.3f}.png".format(id, min(history.history["val_kid"]))
-        )
+        if history is not None:
+            min_kid = min(history.history["val_kid"])
+            plt.savefig("images/_{}_final_{:.3f}.png".format(id, min_kid))
+        else:
+            plt.savefig("images/_{}_final.png".format(id))
     plt.close()
 
 

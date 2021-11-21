@@ -2,7 +2,6 @@ import tensorflow as tf
 
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras.layers.experimental import preprocessing
 
 from utils import step
 
@@ -27,17 +26,17 @@ class AdaptiveAugmenter(keras.Model):
             [
                 layers.InputLayer(input_shape=input_shape),
                 # blitting/x-flip:
-                preprocessing.RandomFlip("horizontal"),
+                layers.RandomFlip("horizontal"),
                 # blitting/integer translation:
-                preprocessing.RandomTranslation(
+                layers.RandomTranslation(
                     height_factor=max_translation,
                     width_factor=max_translation,
                     interpolation="nearest",
                 ),
                 # geometric/rotation:
-                preprocessing.RandomRotation(factor=max_rotation),
+                layers.RandomRotation(factor=max_rotation),
                 # geometric/isotropic and anisotropic scaling:
-                preprocessing.RandomZoom(
+                layers.RandomZoom(
                     height_factor=(-max_zoom, 0.0), width_factor=(-max_zoom, 0.0)
                 ),
             ],

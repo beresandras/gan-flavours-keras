@@ -30,6 +30,7 @@ matplotlib.use("Agg")
 dataset_name = "caltech_birds2011"  # "oxford_flowers102", "celeb_a", "cifar10"
 image_size = 64  # 64, 64, 32
 num_epochs = 400  # 500, 25, 100
+kid_image_size = 75  # resolution of KID measurement, default 299
 plot_interval = 10  # 10, 1, 2
 
 # optimization
@@ -82,6 +83,7 @@ model = NonSaturatingGAN(
     ema=ema,
     target_accuracy=target_accuracy,
     integration_steps=integration_steps,
+    kid_image_size=kid_image_size,
     plot_interval=plot_interval,
 )
 

@@ -2,15 +2,14 @@ import tensorflow as tf
 
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras.layers.experimental import preprocessing
 
 
 class KID(keras.metrics.Metric):
-    def __init__(self, name="kid", input_shape=None, **kwargs):
+    def __init__(self, name="kid", input_shape=None, image_size=None, **kwargs):
         super().__init__(name=name, **kwargs)
 
         # resolution of images for the KID estimation
-        self.image_size = 75
+        self.image_size = image_size
 
         # KID is estimated per batch and is averaged across batches
         self.kid_tracker = keras.metrics.Mean()
@@ -19,9 +18,7 @@ class KID(keras.metrics.Metric):
         self.encoder = keras.Sequential(
             [
                 layers.InputLayer(input_shape=input_shape),
-                preprocessing.Rescaling(255.0),
-                preprocessing.Resizing(height=self.image_size, width=self.image_size),
-                layers.Lambda(keras.applications.inception_v3.preprocess_input),
+                layers.Lambda(self.preprocess_input),
                 keras.applications.InceptionV3(
                     include_top=False,
                     input_shape=(self.image_size, self.image_size, 3),
@@ -30,6 +27,17 @@ class KID(keras.metrics.Metric):
                 layers.GlobalAveragePooling2D(),
             ]
         )
+
+    def preprocess_input(self, images):
+        images = tf.image.resize(
+            images,
+            size=[self.image_size, self.image_size],
+            method="bicubic",
+            antialias=True,
+        )
+        images = tf.clip_by_value(images, 0.0, 1.0)
+        images = keras.applications.inception_v3.preprocess_input(images * 255.0)
+        return images
 
     def polynomial_kernel(self, features_1, features_2):
         feature_dimensions = tf.cast(tf.shape(features_1)[1], dtype=tf.float32)

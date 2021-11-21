@@ -19,6 +19,7 @@ class GAN(keras.Model):
         ema,
         target_accuracy,
         integration_steps,
+        kid_image_size,
         plot_interval,
         is_jupyter=False,
     ):
@@ -38,6 +39,7 @@ class GAN(keras.Model):
         self.noise_size = self.generator.input_shape[3]
         self.one_sided_label_smoothing = one_sided_label_smoothing
         self.ema = ema
+        self.kid_image_size = kid_image_size
         self.plot_interval = plot_interval
         self.is_jupyter = is_jupyter
 
@@ -54,7 +56,9 @@ class GAN(keras.Model):
         self.real_accuracy = keras.metrics.BinaryAccuracy(name="real_acc")
         self.generated_accuracy = keras.metrics.BinaryAccuracy(name="gen_acc")
         self.augmentation_probability_tracker = keras.metrics.Mean(name="aug_p")
-        self.kid = KID(input_shape=self.generator.output_shape[1:])
+        self.kid = KID(
+            input_shape=self.generator.output_shape[1:], image_size=self.kid_image_size
+        )
 
     @property
     def metrics(self):
