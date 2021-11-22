@@ -8,7 +8,9 @@ from utils import step
 
 # augments images with a probability that is dynamically updated during training
 class AdaptiveAugmenter(keras.Model):
-    def __init__(self, target_accuracy, integration_steps, input_shape):
+    def __init__(
+        self, target_accuracy, integration_steps, max_probability, input_shape
+    ):
         super().__init__()
 
         # stores the current probability of an image being augmented
@@ -16,6 +18,7 @@ class AdaptiveAugmenter(keras.Model):
 
         self.target_accuracy = target_accuracy
         self.integration_steps = integration_steps
+        self.max_probability = max_probability
 
         max_translation = 0.125
         max_rotation = 0.125
@@ -67,6 +70,8 @@ class AdaptiveAugmenter(keras.Model):
         accuracy_error = current_accuracy - self.target_accuracy
         self.probability.assign(
             tf.clip_by_value(
-                self.probability + accuracy_error / self.integration_steps, 0.0, 1.0
+                self.probability + accuracy_error / self.integration_steps,
+                0.0,
+                self.max_probability,
             )
         )

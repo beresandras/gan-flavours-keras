@@ -8,6 +8,7 @@ from tensorflow import keras
 
 from dataset import prepare_dataset
 from architecture import get_generator, get_discriminator
+from augmentation import AdaptiveAugmenter
 from losses import (
     MiniMaxGAN,
     NonSaturatingGAN,
@@ -56,6 +57,7 @@ spectral_norm = False
 # adaptive discriminator augmentation
 target_accuracy = None  # 0.85, set to None to disable
 integration_steps = 1000
+max_probability = 0.8  # maximal augmentation probability
 
 id = 0
 
@@ -79,10 +81,14 @@ model = NonSaturatingGAN(
         dropout_rate,
         spectral_norm,
     ),
+    augmenter=AdaptiveAugmenter(
+        target_accuracy=target_accuracy,
+        integration_steps=integration_steps,
+        max_probability=max_probability,
+        input_shape=(image_size, image_size, 3),
+    ),
     one_sided_label_smoothing=one_sided_label_smoothing,
     ema=ema,
-    target_accuracy=target_accuracy,
-    integration_steps=integration_steps,
     kid_image_size=kid_image_size,
     plot_interval=plot_interval,
 )

@@ -4,7 +4,6 @@ import tensorflow as tf
 from abc import abstractmethod
 from tensorflow import keras
 
-from augmentation import AdaptiveAugmenter
 from metrics import KID
 from utils import step
 
@@ -15,10 +14,9 @@ class GAN(keras.Model):
         id,
         generator,
         discriminator,
+        augmenter,
         one_sided_label_smoothing,
         ema,
-        target_accuracy,
-        integration_steps,
         kid_image_size,
         plot_interval,
         is_jupyter=False,
@@ -30,11 +28,7 @@ class GAN(keras.Model):
         self.generator = generator
         self.ema_generator = keras.models.clone_model(self.generator)
         self.discriminator = discriminator
-        self.augmenter = AdaptiveAugmenter(
-            target_accuracy=target_accuracy,
-            integration_steps=integration_steps,
-            input_shape=self.generator.output_shape[1:],
-        )
+        self.augmenter = augmenter
 
         self.noise_size = self.generator.input_shape[3]
         self.one_sided_label_smoothing = one_sided_label_smoothing
