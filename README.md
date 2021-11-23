@@ -18,7 +18,7 @@ This repository contains:
 
 Try it out in a Colab Notebook (good results take around 2 hours of training): [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/beresandras/gan-flavours-keras/blob/master/gan_flavours_keras.ipynb)
 
-Cherry-picked 256x256 flowers (residual connections + no transposed convolutions):
+Cherry-picked 256x256 flowers (augmentation + residual connections + no transposed convolutions):
 ![hq flowers generated images](./assets/hq_flowers.png)
 
 ## Caltech Birds 2011 (CUB-200)
